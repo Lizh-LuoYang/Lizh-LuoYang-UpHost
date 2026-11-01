@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+# 事件处理方法必须叫 xxx_Click，命名规则会报 IDE1006，降级成提示
+dotnet_diagnostic.IDE1006.severity = suggestion
+
+# Designer 生成的控件字段没法加 readonly，这条建议也降级
+dotnet_diagnostic.IDE0044.severity = suggestion

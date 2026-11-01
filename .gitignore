@@ -1,0 +1,27 @@
+# 构建输出
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio 缓存（换机器必删，否则项目模型可能过期）
+.vs/
+*.user
+*.suo
+*.cache
+*.sdf
+*.opendb
+*.VC.db
+
+# 运行期产物（正常在 %ProgramData%\ChipAgingCheck 下，这里兜底）
+Data/
+batch.json
+
+# 打包
+*.nupkg
+*.zip
+*.7z
+
+# 系统
+Thumbs.db
+desktop.ini
