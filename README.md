@@ -82,3 +82,5 @@ ProgramData 写不进去就退到程序目录，还不行退到 %TEMP%，三级�
 Windows + .NET Framework 4.7.2 + VS2022。依赖 NModbus 和 Newtonsoft.Json，都是 PackageReference，编译时自动还原。
 
 MIT。
+## 后续计划
+- 温度曲线面板
