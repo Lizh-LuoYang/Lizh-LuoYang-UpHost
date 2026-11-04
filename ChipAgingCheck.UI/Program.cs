@@ -16,6 +16,7 @@ namespace ChipAgingCheck.UI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            ChipAgingCheck.Domain.Common.CurveSelfCheck.Run();   // 启动前先自检温度曲线，结果进 VS 输出窗口
             Application.Run(new MainForm());
         }
     }

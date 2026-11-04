@@ -50,6 +50,7 @@ namespace ChipAgingCheck.UI
             this.lblLogTitle = new System.Windows.Forms.Label();
             this.txtLog = new System.Windows.Forms.TextBox();
             this.lblStatus = new System.Windows.Forms.Label();
+            this.curvePanel = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // lblTitle
@@ -58,7 +59,7 @@ namespace ChipAgingCheck.UI
             this.lblTitle.Font = new System.Drawing.Font("阿里巴巴普惠体 3.0 65 Medium", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblTitle.Location = new System.Drawing.Point(16, 10);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(220, 40);
+            this.lblTitle.Size = new System.Drawing.Size(204, 42);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "芯片老化检测";
             // 
@@ -67,7 +68,7 @@ namespace ChipAgingCheck.UI
             this.lblRecipeCaption.AutoSize = true;
             this.lblRecipeCaption.Location = new System.Drawing.Point(16, 66);
             this.lblRecipeCaption.Name = "lblRecipeCaption";
-            this.lblRecipeCaption.Size = new System.Drawing.Size(60, 28);
+            this.lblRecipeCaption.Size = new System.Drawing.Size(54, 28);
             this.lblRecipeCaption.TabIndex = 1;
             this.lblRecipeCaption.Text = "配方";
             // 
@@ -93,7 +94,7 @@ namespace ChipAgingCheck.UI
             this.lblDeviceCaption.AutoSize = true;
             this.lblDeviceCaption.Location = new System.Drawing.Point(470, 66);
             this.lblDeviceCaption.Name = "lblDeviceCaption";
-            this.lblDeviceCaption.Size = new System.Drawing.Size(60, 28);
+            this.lblDeviceCaption.Size = new System.Drawing.Size(54, 28);
             this.lblDeviceCaption.TabIndex = 4;
             this.lblDeviceCaption.Text = "设备";
             // 
@@ -133,12 +134,19 @@ namespace ChipAgingCheck.UI
             this.btnStop.Text = "停止";
             this.btnStop.UseVisualStyleBackColor = true;
             // 
+            // btnAlarmConfirm
+            // 
+            this.btnAlarmConfirm.Location = new System.Drawing.Point(0, 0);
+            this.btnAlarmConfirm.Name = "btnAlarmConfirm";
+            this.btnAlarmConfirm.Size = new System.Drawing.Size(75, 23);
+            this.btnAlarmConfirm.TabIndex = 21;
+            // 
             // lblRunState
             // 
             this.lblRunState.AutoSize = true;
             this.lblRunState.Location = new System.Drawing.Point(492, 124);
             this.lblRunState.Name = "lblRunState";
-            this.lblRunState.Size = new System.Drawing.Size(140, 28);
+            this.lblRunState.Size = new System.Drawing.Size(138, 28);
             this.lblRunState.TabIndex = 9;
             this.lblRunState.Text = "状态：未运行";
             // 
@@ -147,7 +155,7 @@ namespace ChipAgingCheck.UI
             this.lblTemp.AutoSize = true;
             this.lblTemp.Location = new System.Drawing.Point(900, 66);
             this.lblTemp.Name = "lblTemp";
-            this.lblTemp.Size = new System.Drawing.Size(160, 28);
+            this.lblTemp.Size = new System.Drawing.Size(138, 28);
             this.lblTemp.TabIndex = 10;
             this.lblTemp.Text = "炉温：--.- ℃";
             // 
@@ -156,7 +164,7 @@ namespace ChipAgingCheck.UI
             this.lblConnCount.AutoSize = true;
             this.lblConnCount.Location = new System.Drawing.Point(1090, 66);
             this.lblConnCount.Name = "lblConnCount";
-            this.lblConnCount.Size = new System.Drawing.Size(160, 28);
+            this.lblConnCount.Size = new System.Drawing.Size(151, 28);
             this.lblConnCount.TabIndex = 11;
             this.lblConnCount.Text = "在线：0 / 8 台";
             // 
@@ -165,7 +173,7 @@ namespace ChipAgingCheck.UI
             this.lblBatch.AutoSize = true;
             this.lblBatch.Location = new System.Drawing.Point(1090, 124);
             this.lblBatch.Name = "lblBatch";
-            this.lblBatch.Size = new System.Drawing.Size(160, 28);
+            this.lblBatch.Size = new System.Drawing.Size(138, 28);
             this.lblBatch.TabIndex = 12;
             this.lblBatch.Text = "批次：未开始";
             // 
@@ -174,7 +182,7 @@ namespace ChipAgingCheck.UI
             this.lblRunTime.AutoSize = true;
             this.lblRunTime.Location = new System.Drawing.Point(900, 124);
             this.lblRunTime.Name = "lblRunTime";
-            this.lblRunTime.Size = new System.Drawing.Size(160, 28);
+            this.lblRunTime.Size = new System.Drawing.Size(171, 28);
             this.lblRunTime.TabIndex = 13;
             this.lblRunTime.Text = "运行：00:00:00";
             // 
@@ -183,7 +191,7 @@ namespace ChipAgingCheck.UI
             this.lblGridTitle.AutoSize = true;
             this.lblGridTitle.Location = new System.Drawing.Point(16, 178);
             this.lblGridTitle.Name = "lblGridTitle";
-            this.lblGridTitle.Size = new System.Drawing.Size(560, 28);
+            this.lblGridTitle.Size = new System.Drawing.Size(591, 28);
             this.lblGridTitle.TabIndex = 14;
             this.lblGridTitle.Text = "512 路实时状态（8 台 × 64 路）：绿=正常  红=报警  灰=离线";
             // 
@@ -202,7 +210,7 @@ namespace ChipAgingCheck.UI
             this.lblAlarmTitle.AutoSize = true;
             this.lblAlarmTitle.Location = new System.Drawing.Point(16, 464);
             this.lblAlarmTitle.Name = "lblAlarmTitle";
-            this.lblAlarmTitle.Size = new System.Drawing.Size(140, 28);
+            this.lblAlarmTitle.Size = new System.Drawing.Size(96, 28);
             this.lblAlarmTitle.TabIndex = 16;
             this.lblAlarmTitle.Text = "报警信息";
             // 
@@ -223,7 +231,7 @@ namespace ChipAgingCheck.UI
             this.lblLogTitle.AutoSize = true;
             this.lblLogTitle.Location = new System.Drawing.Point(652, 464);
             this.lblLogTitle.Name = "lblLogTitle";
-            this.lblLogTitle.Size = new System.Drawing.Size(140, 28);
+            this.lblLogTitle.Size = new System.Drawing.Size(96, 28);
             this.lblLogTitle.TabIndex = 18;
             this.lblLogTitle.Text = "运行日志";
             // 
@@ -246,15 +254,23 @@ namespace ChipAgingCheck.UI
             this.lblStatus.ForeColor = System.Drawing.Color.DimGray;
             this.lblStatus.Location = new System.Drawing.Point(16, 734);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(500, 24);
+            this.lblStatus.Size = new System.Drawing.Size(39, 20);
             this.lblStatus.TabIndex = 20;
             this.lblStatus.Text = "就绪";
             // 
+            // curvePanel
+            // 
+            this.curvePanel.Location = new System.Drawing.Point(277, 178);
+            this.curvePanel.Name = "curvePanel";
+            this.curvePanel.Size = new System.Drawing.Size(781, 326);
+            this.curvePanel.TabIndex = 22;
+            this.curvePanel.Paint += new System.Windows.Forms.PaintEventHandler(this.curvePanel_Paint);
+            // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 28F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(1300, 768);
+            this.Controls.Add(this.curvePanel);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.txtLog);
             this.Controls.Add(this.lblLogTitle);
@@ -311,5 +327,6 @@ namespace ChipAgingCheck.UI
         private System.Windows.Forms.Label lblLogTitle;
         private System.Windows.Forms.TextBox txtLog;
         private System.Windows.Forms.Label lblStatus;
+        private System.Windows.Forms.Panel curvePanel;
     }
 }

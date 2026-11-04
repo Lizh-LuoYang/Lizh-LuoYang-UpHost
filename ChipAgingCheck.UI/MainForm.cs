@@ -21,6 +21,8 @@ namespace ChipAgingCheck.UI
         private const int MaxLogLines = 500;
         private const int DeviceMax = 8;
         private const int ChannelMax = 64;
+        private double curveMinTemp = 0;        // 纵轴最低温度，每次重画前重新算
+        private double curveMaxTemp = 150;      // 纵轴最高温度，每次重画前重新算
 
         public MainForm()
         {
@@ -197,6 +199,7 @@ namespace ChipAgingCheck.UI
                 if (sameName)
                 {
                     TaskProcess.Instance.SetRecipe(builtInRecipes[i]);
+                    curvePanel.Invalidate();
                     AppendLog("已切换配方：" + selectedName);
                     lblStatus.Text = "配方已切换为 " + selectedName;
                     return;
@@ -462,6 +465,88 @@ namespace ChipAgingCheck.UI
             TaskProcess.Instance.Stop();
             BatchRecorder.Stop();
             base.OnFormClosing(e);
+        }
+
+        private void curvePanel_Paint(object sender, PaintEventArgs e)
+        {
+            Point[] curvePoints = BuildCurvePoints();               // 先把要画的点全算出来
+            bool tooFewPoints = curvePoints.Length < 2;             // 少于两个点连不成线
+            if (tooFewPoints)
+            {
+                return;                                             // 直接退出，什么都不画
+            }
+            e.Graphics.DrawLines(Pens.SteelBlue, curvePoints);      // 一次画完整条折线
+        }
+
+        private Point[] BuildCurvePoints()
+        {
+            List<TempCurveStep> steps = TaskProcess.Instance.GetRecipe().Curve;   // 读当前选中的配方
+            int totalTime = 0;                                                    // 横轴总长度
+            for (int stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+            {
+                totalTime = totalTime + steps[stepIndex].RampMinutes + steps[stepIndex].HoldMinutes;
+            }
+            bool noTime = totalTime == 0;                                         // 全 0 会除出 Infinity
+            if (noTime)
+            {
+                return new Point[0];
+            }
+
+            int startTemp = 25;                                                   // 曲线起点
+
+            // 第一遍：只扫纵轴范围，一个点都不算
+            curveMinTemp = startTemp;
+            curveMaxTemp = startTemp;
+            for (int stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+            {
+                TempCurveStep rangeStep = steps[stepIndex];
+                bool lowerThanMin = rangeStep.TargetTemp < curveMinTemp;
+                if (lowerThanMin)
+                {
+                    curveMinTemp = rangeStep.TargetTemp;
+                }
+                bool higherThanMax = rangeStep.TargetTemp > curveMaxTemp;
+                if (higherThanMax)
+                {
+                    curveMaxTemp = rangeStep.TargetTemp;
+                }
+            }
+            double tempSpan = curveMaxTemp - curveMinTemp;                        // 温度跨度
+            bool flatCurve = tempSpan < 1;                                        // 全程同温，跨度为 0
+            if (flatCurve)
+            {
+                curveMaxTemp = curveMinTemp + 10;                                 // 撑开一点，否则下面会除以 0
+            }
+
+            // 第二遍：范围已经定死，只算点
+            List<Point> points = new List<Point>();
+            int elapsedTime = 0;
+            points.Add(GetPoint(elapsedTime, startTemp, totalTime));               // 起点
+            for (int stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+            {
+                TempCurveStep step = steps[stepIndex];
+                elapsedTime = elapsedTime + step.RampMinutes;                     // 时间走到升温结束
+                points.Add(GetPoint(elapsedTime, step.TargetTemp, totalTime));     // 到达目标温度
+                elapsedTime = elapsedTime + step.HoldMinutes;                     // 时间走到保温结束
+                points.Add(GetPoint(elapsedTime, step.TargetTemp, totalTime));     // 温度不变，画横线
+            }
+            return points.ToArray();
+        }
+
+        private Point GetPoint(double elaspedTime,double temp,int totalTime)
+        {
+            const int Margin = 20;//留白20
+            
+            int width = curvePanel.Width;
+            int height = curvePanel.Height;
+            int canUseWidth = width - Margin * 2;
+            int canUseHight = height - Margin * 2;
+            //先算出来一共多少个像素y轴，然后再根据时间对应 可用高除以最大值得到每个值对应的像素位置
+            double y = height - Margin - canUseHight * (temp - curveMinTemp) / (curveMaxTemp - curveMinTemp);
+            double x = canUseWidth * (elaspedTime/totalTime)+Margin;
+            int realY = (int)y;
+            int realX = (int)x;
+            return new Point(realX, realY);
         }
     }
 }
