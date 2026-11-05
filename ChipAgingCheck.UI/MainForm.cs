@@ -1,9 +1,10 @@
-﻿using ChipAgingCheck.Domain;
+using ChipAgingCheck.Domain;
 using ChipAgingCheck.Domain.Common;
 using ChipAgingCheck.Domain.Ctrs;
 using ChipAgingCheck.Domain.Modbus;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Media;
 using System.Text;
@@ -23,7 +24,10 @@ namespace ChipAgingCheck.UI
         private const int ChannelMax = 64;
         private double curveMinTemp = 0;        // 纵轴最低温度，每次重画前重新算
         private double curveMaxTemp = 150;      // 纵轴最高温度，每次重画前重新算
-
+        private const int SampleSeconds = 10;//10s画一次
+        private readonly List<PointF> actualSample= new List<PointF>();//实际温度
+        private DateTime lastSampleTime = DateTime.MinValue;//上次记录的时间
+        private int curveTotalMinutes = 0;//横轴总长
         public MainForm()
         {
             InitializeComponent();
@@ -103,6 +107,8 @@ namespace ChipAgingCheck.UI
             {
                 TaskProcess.Instance.Start();
                 runStartTime = DateTime.Now;
+                actualSample.Clear();
+                lastSampleTime = DateTime.Now;
                 refreshTimer.Start();
                 lblRunState.Text = "状态：运行中";
                 StartOrResumeBatch();
@@ -221,9 +227,66 @@ namespace ChipAgingCheck.UI
             UpdateRunTime();
             UpdateConnectionCount();
             UpdateTemperature();
+            RecordActualTemperature();
             UpdateAlarmList();
             SaveDataSnapshot();
             GridPanel.Invalidate();
+        }
+        //每10秒记一个温度点
+        private void RecordActualTemperature()
+        {
+            bool noStart = runStartTime == DateTime.MinValue;//未启动
+            if (noStart)
+            {
+                return;
+            }
+            TimeSpan sinceLast = DateTime.Now - lastSampleTime;
+            bool tooSoon = sinceLast.TotalSeconds < SampleSeconds;
+            if (tooSoon)
+            {
+                return;
+            }
+            List<ModbusStatus> modbusStatuses = TaskProcess.Instance.Status;
+            ModbusStatus FristStatue = modbusStatuses[0];
+            bool offline = FristStatue.ConnState != ConnectState.Connect;
+            if (offline)
+            {
+                return;
+            }
+            TimeSpan runSpan = DateTime.Now - runStartTime;
+            float elapsedMinutes = (float)runSpan.TotalMinutes;
+            float temp = (float)FristStatue.Furnacetemperature;
+            PointF sample =new PointF(elapsedMinutes, temp);
+            actualSample.Add(sample);
+            lastSampleTime = DateTime.Now;
+            curvePanel.Invalidate();                              // 记完点叫面板重画，否则红线画上去也看不见
+        }
+        //画实际温度红线
+        private void DrawActualTemp(PaintEventArgs e)
+        {
+            bool tooFewSample = actualSample.Count < 2;
+            if (tooFewSample)
+            {
+                return;
+
+            }
+            List<Point> points = new List<Point>();
+            for (int i = 0; i < actualSample.Count; i++) 
+            {
+                PointF sample = actualSample[i];
+                double elapsedMinutes = sample.X;
+                double temp = sample.Y;
+                bool beyondCurve = elapsedMinutes > curveTotalMinutes;
+                if (beyondCurve)
+                {
+                    break;
+                }
+                points.Add(GetPoint(elapsedMinutes, temp, curveTotalMinutes));
+            }
+            bool tooFewPoints = points.Count < 2;
+            if (tooFewPoints) { return; }
+            e.Graphics.DrawLines(Pens.Red, points.ToArray());
+            
         }
 
         private void UpdateRunTime()
@@ -475,7 +538,9 @@ namespace ChipAgingCheck.UI
             {
                 return;                                             // 直接退出，什么都不画
             }
-            e.Graphics.DrawLines(Pens.SteelBlue, curvePoints);      // 一次画完整条折线
+            e.Graphics.DrawLines(Pens.SteelBlue, curvePoints);
+            DrawActualTemp(e);
+            DrawNowMarker(e);                                     // 最后画“现在时刻”竖线// 目标线画完，再画实际线// 一次画完整条折线
         }
 
         private Point[] BuildCurvePoints()
@@ -486,6 +551,7 @@ namespace ChipAgingCheck.UI
             {
                 totalTime = totalTime + steps[stepIndex].RampMinutes + steps[stepIndex].HoldMinutes;
             }
+            curveTotalMinutes = totalTime;
             bool noTime = totalTime == 0;                                         // 全 0 会除出 Infinity
             if (noTime)
             {
@@ -532,7 +598,34 @@ namespace ChipAgingCheck.UI
             }
             return points.ToArray();
         }
-
+        // 画“现在时刻”的灰色竖线，左上角写已经跑了多久
+        private void DrawNowMarker(PaintEventArgs e)
+        {
+            bool noStart = runStartTime == DateTime.MinValue;                 // 没按过启动，不画
+            if (noStart)
+            {
+                return;
+            }
+            bool noCurve = curveTotalMinutes <= 0;                            // 配方时长是 0，没法换算
+            if (noCurve)
+            {
+                return;
+            }
+            TimeSpan runSpan = DateTime.Now - runStartTime;
+            double elapsedMinutes = runSpan.TotalMinutes;                     // 已经跑了多少分钟
+            bool beyondCurve = elapsedMinutes > curveTotalMinutes;             // 跑超了，竖线停在右边界
+            if (beyondCurve)
+            {
+                elapsedMinutes = curveTotalMinutes;
+            }
+            Point markerTop = GetPoint(elapsedMinutes, curveMaxTemp, curveTotalMinutes);      // 上端：用曲线最高温
+            Point markerBottom = GetPoint(elapsedMinutes, curveMinTemp, curveTotalMinutes);   // 下端：用曲线最低温
+            e.Graphics.DrawLine(Pens.Gray, markerTop, markerBottom);                          // 灰笔，别跟两条线撞色
+            double doneHours = elapsedMinutes / 60.0;                          // 已跑几小时
+            double totalHours = curveTotalMinutes / 60.0;                      // 全程几小时
+            string progressText = "已跑 " + doneHours.ToString("F1") + " / " + totalHours.ToString("F1") + " 小时";
+            e.Graphics.DrawString(progressText, this.Font, Brushes.Black, 8, 4);   // 写在左上角
+        }
         private Point GetPoint(double elaspedTime,double temp,int totalTime)
         {
             const int Margin = 20;//留白20
@@ -543,6 +636,18 @@ namespace ChipAgingCheck.UI
             int canUseHight = height - Margin * 2;
             //先算出来一共多少个像素y轴，然后再根据时间对应 可用高除以最大值得到每个值对应的像素位置
             double y = height - Margin - canUseHight * (temp - curveMinTemp) / (curveMaxTemp - curveMinTemp);
+            double topLimit = Margin;                             // 上边界：超了贴住上边框，别画到画布外
+            double bottomLimit = height - Margin;                  // 下边界：超了贴住下边框
+            bool aboveTop = y < topLimit;
+            if (aboveTop)
+            {
+                y = topLimit;
+            }
+            bool belowBottom = y > bottomLimit;
+            if (belowBottom)
+            {
+                y = bottomLimit;
+            }
             double x = canUseWidth * (elaspedTime/totalTime)+Margin;
             int realY = (int)y;
             int realX = (int)x;
