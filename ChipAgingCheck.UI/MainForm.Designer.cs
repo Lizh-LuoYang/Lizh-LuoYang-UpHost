@@ -1,4 +1,4 @@
-namespace ChipAgingCheck.UI
+﻿namespace ChipAgingCheck.UI
 {
     partial class MainForm
     {
@@ -43,14 +43,19 @@ namespace ChipAgingCheck.UI
             this.lblConnCount = new System.Windows.Forms.Label();
             this.lblBatch = new System.Windows.Forms.Label();
             this.lblRunTime = new System.Windows.Forms.Label();
-            this.lblGridTitle = new System.Windows.Forms.Label();
             this.GridPanel = new System.Windows.Forms.Panel();
-            this.lblAlarmTitle = new System.Windows.Forms.Label();
             this.txtAlarm = new System.Windows.Forms.TextBox();
-            this.lblLogTitle = new System.Windows.Forms.Label();
             this.txtLog = new System.Windows.Forms.TextBox();
             this.lblStatus = new System.Windows.Forms.Label();
             this.curvePanel = new System.Windows.Forms.Panel();
+            this.tabMain = new System.Windows.Forms.TabControl();
+            this.tabPageGrid = new System.Windows.Forms.TabPage();
+            this.tabPageCurve = new System.Windows.Forms.TabPage();
+            this.tabPageAlarm = new System.Windows.Forms.TabPage();
+            this.tabMain.SuspendLayout();
+            this.tabPageGrid.SuspendLayout();
+            this.tabPageCurve.SuspendLayout();
+            this.tabPageAlarm.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblTitle
@@ -186,65 +191,44 @@ namespace ChipAgingCheck.UI
             this.lblRunTime.TabIndex = 13;
             this.lblRunTime.Text = "运行：00:00:00";
             // 
-            // lblGridTitle
-            // 
-            this.lblGridTitle.AutoSize = true;
-            this.lblGridTitle.Location = new System.Drawing.Point(16, 178);
-            this.lblGridTitle.Name = "lblGridTitle";
-            this.lblGridTitle.Size = new System.Drawing.Size(591, 28);
-            this.lblGridTitle.TabIndex = 14;
-            this.lblGridTitle.Text = "512 路实时状态（8 台 × 64 路）：绿=正常  红=报警  灰=离线";
-            // 
             // GridPanel
             // 
             this.GridPanel.BackColor = System.Drawing.Color.White;
             this.GridPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.GridPanel.Location = new System.Drawing.Point(16, 212);
+            this.GridPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.GridPanel.Location = new System.Drawing.Point(0, 0);
             this.GridPanel.Name = "GridPanel";
-            this.GridPanel.Size = new System.Drawing.Size(1268, 240);
+            this.GridPanel.Size = new System.Drawing.Size(1252, 476);
             this.GridPanel.TabIndex = 15;
             this.GridPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.GridPanel_Paint);
             // 
-            // lblAlarmTitle
-            // 
-            this.lblAlarmTitle.AutoSize = true;
-            this.lblAlarmTitle.Location = new System.Drawing.Point(16, 464);
-            this.lblAlarmTitle.Name = "lblAlarmTitle";
-            this.lblAlarmTitle.Size = new System.Drawing.Size(96, 28);
-            this.lblAlarmTitle.TabIndex = 16;
-            this.lblAlarmTitle.Text = "报警信息";
-            // 
             // txtAlarm
             // 
+            this.txtAlarm.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.txtAlarm.BackColor = System.Drawing.Color.White;
             this.txtAlarm.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.txtAlarm.Location = new System.Drawing.Point(16, 496);
+            this.txtAlarm.Location = new System.Drawing.Point(8, 8);
             this.txtAlarm.Multiline = true;
             this.txtAlarm.Name = "txtAlarm";
             this.txtAlarm.ReadOnly = true;
             this.txtAlarm.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtAlarm.Size = new System.Drawing.Size(620, 230);
+            this.txtAlarm.Size = new System.Drawing.Size(600, 460);
             this.txtAlarm.TabIndex = 17;
-            // 
-            // lblLogTitle
-            // 
-            this.lblLogTitle.AutoSize = true;
-            this.lblLogTitle.Location = new System.Drawing.Point(652, 464);
-            this.lblLogTitle.Name = "lblLogTitle";
-            this.lblLogTitle.Size = new System.Drawing.Size(96, 28);
-            this.lblLogTitle.TabIndex = 18;
-            this.lblLogTitle.Text = "运行日志";
             // 
             // txtLog
             // 
+            this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.txtLog.BackColor = System.Drawing.Color.White;
             this.txtLog.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.txtLog.Location = new System.Drawing.Point(652, 496);
+            this.txtLog.Location = new System.Drawing.Point(616, 8);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(632, 230);
+            this.txtLog.Size = new System.Drawing.Size(628, 460);
             this.txtLog.TabIndex = 19;
             // 
             // lblStatus
@@ -260,24 +244,62 @@ namespace ChipAgingCheck.UI
             // 
             // curvePanel
             // 
-            this.curvePanel.Location = new System.Drawing.Point(277, 178);
+            this.curvePanel.BackColor = System.Drawing.Color.White;
+            this.curvePanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.curvePanel.Location = new System.Drawing.Point(0, 0);
             this.curvePanel.Name = "curvePanel";
-            this.curvePanel.Size = new System.Drawing.Size(781, 326);
+            this.curvePanel.Size = new System.Drawing.Size(1252, 476);
             this.curvePanel.TabIndex = 22;
             this.curvePanel.Paint += new System.Windows.Forms.PaintEventHandler(this.curvePanel_Paint);
+            // 
+            // tabMain
+            // 
+            this.tabMain.Controls.Add(this.tabPageGrid);
+            this.tabMain.Controls.Add(this.tabPageCurve);
+            this.tabMain.Controls.Add(this.tabPageAlarm);
+            this.tabMain.Location = new System.Drawing.Point(16, 178);
+            this.tabMain.Name = "tabMain";
+            this.tabMain.SelectedIndex = 0;
+            this.tabMain.Size = new System.Drawing.Size(1260, 508);
+            this.tabMain.TabIndex = 14;
+            // 
+            // tabPageGrid
+            // 
+            this.tabPageGrid.Controls.Add(this.GridPanel);
+            this.tabPageGrid.Location = new System.Drawing.Point(4, 30);
+            this.tabPageGrid.Name = "tabPageGrid";
+            this.tabPageGrid.Size = new System.Drawing.Size(1252, 474);
+            this.tabPageGrid.TabIndex = 0;
+            this.tabPageGrid.Text = "实时状态";
+            this.tabPageGrid.UseVisualStyleBackColor = true;
+            // 
+            // tabPageCurve
+            // 
+            this.tabPageCurve.Controls.Add(this.curvePanel);
+            this.tabPageCurve.Location = new System.Drawing.Point(4, 30);
+            this.tabPageCurve.Name = "tabPageCurve";
+            this.tabPageCurve.Size = new System.Drawing.Size(1252, 474);
+            this.tabPageCurve.TabIndex = 1;
+            this.tabPageCurve.Text = "温度曲线";
+            this.tabPageCurve.UseVisualStyleBackColor = true;
+            // 
+            // tabPageAlarm
+            // 
+            this.tabPageAlarm.Controls.Add(this.txtAlarm);
+            this.tabPageAlarm.Controls.Add(this.txtLog);
+            this.tabPageAlarm.Location = new System.Drawing.Point(4, 30);
+            this.tabPageAlarm.Name = "tabPageAlarm";
+            this.tabPageAlarm.Size = new System.Drawing.Size(1252, 474);
+            this.tabPageAlarm.TabIndex = 2;
+            this.tabPageAlarm.Text = "报警 · 日志";
+            this.tabPageAlarm.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(1300, 768);
-            this.Controls.Add(this.curvePanel);
+            this.Controls.Add(this.tabMain);
             this.Controls.Add(this.lblStatus);
-            this.Controls.Add(this.txtLog);
-            this.Controls.Add(this.lblLogTitle);
-            this.Controls.Add(this.txtAlarm);
-            this.Controls.Add(this.lblAlarmTitle);
-            this.Controls.Add(this.GridPanel);
-            this.Controls.Add(this.lblGridTitle);
             this.Controls.Add(this.lblRunTime);
             this.Controls.Add(this.lblBatch);
             this.Controls.Add(this.lblConnCount);
@@ -298,6 +320,11 @@ namespace ChipAgingCheck.UI
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "芯片老化检测";
+            this.tabPageAlarm.ResumeLayout(false);
+            this.tabPageAlarm.PerformLayout();
+            this.tabPageCurve.ResumeLayout(false);
+            this.tabPageGrid.ResumeLayout(false);
+            this.tabMain.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -320,13 +347,14 @@ namespace ChipAgingCheck.UI
         private System.Windows.Forms.Label lblConnCount;
         private System.Windows.Forms.Label lblBatch;
         private System.Windows.Forms.Label lblRunTime;
-        private System.Windows.Forms.Label lblGridTitle;
         private System.Windows.Forms.Panel GridPanel;
-        private System.Windows.Forms.Label lblAlarmTitle;
         private System.Windows.Forms.TextBox txtAlarm;
-        private System.Windows.Forms.Label lblLogTitle;
         private System.Windows.Forms.TextBox txtLog;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Panel curvePanel;
+        private System.Windows.Forms.TabControl tabMain;
+        private System.Windows.Forms.TabPage tabPageGrid;
+        private System.Windows.Forms.TabPage tabPageCurve;
+        private System.Windows.Forms.TabPage tabPageAlarm;
     }
 }

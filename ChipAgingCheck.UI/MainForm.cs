@@ -25,6 +25,7 @@ namespace ChipAgingCheck.UI
         private double curveMinTemp = 0;        // 纵轴最低温度，每次重画前重新算
         private double curveMaxTemp = 150;      // 纵轴最高温度，每次重画前重新算
         private const int SampleSeconds = 10;//10s画一次
+        private const int CurveMargin = 56;   // 曲线面板四周留白，够写温度/时间刻度文字
         private readonly List<PointF> actualSample= new List<PointF>();//实际温度
         private DateTime lastSampleTime = DateTime.MinValue;//上次记录的时间
         private int curveTotalMinutes = 0;//横轴总长
@@ -286,7 +287,10 @@ namespace ChipAgingCheck.UI
             bool tooFewPoints = points.Count < 2;
             if (tooFewPoints) { return; }
             e.Graphics.DrawLines(Pens.Red, points.ToArray());
-            
+            Point lastPoint = points[points.Count - 1];
+            const int DotRadius = 4;                                     // 当前温度点半径
+            e.Graphics.FillEllipse(Brushes.Red, lastPoint.X - DotRadius, lastPoint.Y - DotRadius,
+                DotRadius * 2, DotRadius * 2);                           // 温度不变时线段长度为 0，靠这个点显示"现在温度"
         }
 
         private void UpdateRunTime()
@@ -538,9 +542,54 @@ namespace ChipAgingCheck.UI
             {
                 return;                                             // 直接退出，什么都不画
             }
-            e.Graphics.DrawLines(Pens.SteelBlue, curvePoints);
-            DrawActualTemp(e);
-            DrawNowMarker(e);                                     // 最后画“现在时刻”竖线// 目标线画完，再画实际线// 一次画完整条折线
+            DrawAxis(e);                                          // 1. 先画坐标轴刻度
+            e.Graphics.DrawLines(Pens.SteelBlue, curvePoints);     // 2. 目标线
+            DrawActualTemp(e);                                     // 3. 红线最后画，压在最上面
+        }
+
+        // 画坐标轴：左边温度刻度，底部小时刻度，左上角写已跑多久
+        private void DrawAxis(PaintEventArgs e)
+        {
+            bool noCurve = curveTotalMinutes <= 0;                        // 配方时长是 0，刻度没法算
+            if (noCurve)
+            {
+                return;
+            }
+            int width = curvePanel.Width;
+            int height = curvePanel.Height;
+            int canUseWidth = width - CurveMargin * 2;
+            int canUseHeight = height - CurveMargin * 2;
+            const int TickCount = 5;                                      // 分 5 段，画 6 条刻度
+            for (int tick = 0; tick <= TickCount; tick++)
+            {
+                double ratio = (double)tick / TickCount;                  // 0 / 0.2 / 0.4 / ... / 1
+                // 纵轴：0 在底边，1 在顶边
+                double temp = curveMinTemp + (curveMaxTemp - curveMinTemp) * ratio;
+                int y = height - CurveMargin - (int)(canUseHeight * ratio);
+                e.Graphics.DrawLine(Pens.Gray, CurveMargin - 5, y, CurveMargin, y);          // 刻度短线
+                string tempText = temp.ToString("F0") + "℃";
+                SizeF tempSize = e.Graphics.MeasureString(tempText, this.Font);
+                float tempX = CurveMargin - 8 - tempSize.Width;                              // 靠右贴住刻度线
+                e.Graphics.DrawString(tempText, this.Font, Brushes.DimGray, tempX, y - tempSize.Height / 2);
+                // 横轴：0 在左边，全程在右边
+                double hours = curveTotalMinutes / 60.0 * ratio;
+                int x = CurveMargin + (int)(canUseWidth * ratio);
+                e.Graphics.DrawLine(Pens.Gray, x, height - CurveMargin, x, height - CurveMargin + 5);
+                string hourText = hours.ToString("F0") + "h";
+                SizeF hourSize = e.Graphics.MeasureString(hourText, this.Font);
+                float hourX = x - hourSize.Width / 2;                                        // 居中在刻度线下面
+                e.Graphics.DrawString(hourText, this.Font, Brushes.DimGray, hourX, height - CurveMargin + 6);
+            }
+            bool noStart = runStartTime == DateTime.MinValue;              // 没按启动就不写进度
+            if (noStart)
+            {
+                return;
+            }
+            TimeSpan runSpan = DateTime.Now - runStartTime;
+            double doneHours = runSpan.TotalMinutes / 60.0;                // 已跑几小时
+            double totalHours = curveTotalMinutes / 60.0;                  // 全程几小时
+            string progressText = "已跑 " + doneHours.ToString("F1") + " / " + totalHours.ToString("F1") + " 小时";
+            e.Graphics.DrawString(progressText, this.Font, Brushes.Black, CurveMargin, 6);
         }
 
         private Point[] BuildCurvePoints()
@@ -598,46 +647,16 @@ namespace ChipAgingCheck.UI
             }
             return points.ToArray();
         }
-        // 画“现在时刻”的灰色竖线，左上角写已经跑了多久
-        private void DrawNowMarker(PaintEventArgs e)
-        {
-            bool noStart = runStartTime == DateTime.MinValue;                 // 没按过启动，不画
-            if (noStart)
-            {
-                return;
-            }
-            bool noCurve = curveTotalMinutes <= 0;                            // 配方时长是 0，没法换算
-            if (noCurve)
-            {
-                return;
-            }
-            TimeSpan runSpan = DateTime.Now - runStartTime;
-            double elapsedMinutes = runSpan.TotalMinutes;                     // 已经跑了多少分钟
-            bool beyondCurve = elapsedMinutes > curveTotalMinutes;             // 跑超了，竖线停在右边界
-            if (beyondCurve)
-            {
-                elapsedMinutes = curveTotalMinutes;
-            }
-            Point markerTop = GetPoint(elapsedMinutes, curveMaxTemp, curveTotalMinutes);      // 上端：用曲线最高温
-            Point markerBottom = GetPoint(elapsedMinutes, curveMinTemp, curveTotalMinutes);   // 下端：用曲线最低温
-            e.Graphics.DrawLine(Pens.Gray, markerTop, markerBottom);                          // 灰笔，别跟两条线撞色
-            double doneHours = elapsedMinutes / 60.0;                          // 已跑几小时
-            double totalHours = curveTotalMinutes / 60.0;                      // 全程几小时
-            string progressText = "已跑 " + doneHours.ToString("F1") + " / " + totalHours.ToString("F1") + " 小时";
-            e.Graphics.DrawString(progressText, this.Font, Brushes.Black, 8, 4);   // 写在左上角
-        }
         private Point GetPoint(double elaspedTime,double temp,int totalTime)
         {
-            const int Margin = 20;//留白20
-            
             int width = curvePanel.Width;
             int height = curvePanel.Height;
-            int canUseWidth = width - Margin * 2;
-            int canUseHight = height - Margin * 2;
+            int canUseWidth = width - CurveMargin * 2;
+            int canUseHight = height - CurveMargin * 2;
             //先算出来一共多少个像素y轴，然后再根据时间对应 可用高除以最大值得到每个值对应的像素位置
-            double y = height - Margin - canUseHight * (temp - curveMinTemp) / (curveMaxTemp - curveMinTemp);
-            double topLimit = Margin;                             // 上边界：超了贴住上边框，别画到画布外
-            double bottomLimit = height - Margin;                  // 下边界：超了贴住下边框
+            double y = height - CurveMargin - canUseHight * (temp - curveMinTemp) / (curveMaxTemp - curveMinTemp);
+            double topLimit = CurveMargin;                             // 上边界：超了贴住上边框，别画到画布外
+            double bottomLimit = height - CurveMargin;                  // 下边界：超了贴住下边框
             bool aboveTop = y < topLimit;
             if (aboveTop)
             {
@@ -648,7 +667,7 @@ namespace ChipAgingCheck.UI
             {
                 y = bottomLimit;
             }
-            double x = canUseWidth * (elaspedTime/totalTime)+Margin;
+            double x = canUseWidth * (elaspedTime/totalTime)+CurveMargin;
             int realY = (int)y;
             int realX = (int)x;
             return new Point(realX, realY);

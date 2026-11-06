@@ -3,7 +3,11 @@
 #
 # Usage (run from the solution folder):
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools\fake-slaves.ps1
-#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\fake-slaves.ps1 -Port 1502 -SlaveCount 8
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\fake-slaves.ps1 -FurnaceStartC 25 -FurnaceEndC 85 -FurnaceRampSeconds 180
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\fake-slaves.ps1 -FurnaceStartC -40 -FurnaceEndC -40
+#
+# Furnace temperature climbs from FurnaceStartC to FurnaceEndC in FurnaceRampSeconds,
+# then stays at FurnaceEndC. Start == End means a constant temperature.
 #
 # Listens on 127.0.0.1 .. 127.0.0.8, one slave per address, same port.
 # Register map (holding registers, FC03 read / FC16 write), same as the customer appendix:
@@ -18,23 +22,27 @@ param(
     [int]$SlaveCount = 8,
     [double]$CurrentMa = 10.0,
     [double]$VoltageV = 3.0,
-    [double]$FurnaceC = 25.3
+    [double]$FurnaceStartC = 25.0,
+    [double]$FurnaceEndC = 85.0,
+    [int]$FurnaceRampSeconds = 180
 )
 
 $ErrorActionPreference = "Stop"
 
 $currentRaw = [int]($CurrentMa * 10)
 $voltageRaw = [int]($VoltageV * 10)
-$furnaceRaw = [int]($FurnaceC * 10)
+$furnaceStartRaw = [int]($FurnaceStartC * 10)
+$furnaceEndRaw = [int]($FurnaceEndC * 10)
+$furnaceSpanRaw = $furnaceEndRaw - $furnaceStartRaw
 
 # One background job per slave. Each job owns one TCP listener and one register image.
 $slaveScript = {
-    param($ip, $port, $currentRaw, $voltageRaw, $furnaceRaw, $devIndex)
+    param($ip, $port, $currentRaw, $voltageRaw, $furnaceStartRaw, $furnaceSpanRaw, $furnaceEndRaw, $rampSeconds, $devIndex)
 
     # 131 holding registers, filled the way a real power supply would look.
     function New-Registers {
         $regs = New-Object 'int[]' 131
-        $regs[0] = $furnaceRaw
+        $regs[0] = $furnaceStartRaw
         for ($k = 1; $k -le 64; $k++) { $regs[$k] = $currentRaw }
         for ($k = 65; $k -le 128; $k++) { $regs[$k] = $voltageRaw }
         $regs[129] = 1
@@ -65,7 +73,7 @@ $slaveScript = {
     $t0 = Get-Date
 
     # Value by register address (raw, divide by 10 in the app).
-    #   0        furnace 250..258  (25.0 .. 25.8 C, slowly drifting)
+    #   0        furnace: climbs from start to end raw value over rampSeconds, then holds
     #   1..64    current 97..103   (9.7 .. 10.3 mA); special: device 3 channel 5 = 0 (open),
     #                               device 5 channel 10 = 150 (15.0 mA, over current)
     #   65..128  voltage 28..32    (2.8 .. 3.2 V)
@@ -74,7 +82,15 @@ $slaveScript = {
     function Get-Value([int]$addr) {
         $sec = [int]((Get-Date) - $t0).TotalSeconds
 
-        if ($addr -eq 0) { return 250 + ($sec % 9) }
+        if ($addr -eq 0) {
+            if ($rampSeconds -le 0) { return $furnaceEndRaw }
+            $step = [int]($furnaceSpanRaw * $sec / $rampSeconds)
+            $value = $furnaceStartRaw + $step
+            $climbing = $furnaceSpanRaw -ge 0
+            if ($climbing -and $value -gt $furnaceEndRaw) { $value = $furnaceEndRaw }
+            if ($climbing -eq $false -and $value -lt $furnaceEndRaw) { $value = $furnaceEndRaw }
+            return $value
+        }
         if ($addr -ge 1 -and $addr -le 64) {
             if ($devIndex -eq 3 -and $addr -eq 5) { return 0 }
             if ($devIndex -eq 5 -and $addr -eq 10) { return 150 }
@@ -206,12 +222,13 @@ $slaveScript = {
 
 for ($i = 1; $i -le $SlaveCount; $i++) {
     $ip = "127.0.0." + $i
-    Start-Job -ScriptBlock $slaveScript -ArgumentList $ip, $Port, $currentRaw, $voltageRaw, $furnaceRaw, $i | Out-Null
+    Start-Job -ScriptBlock $slaveScript -ArgumentList $ip, $Port, $currentRaw, $voltageRaw, $furnaceStartRaw, $furnaceSpanRaw, $furnaceEndRaw, $FurnaceRampSeconds, $i | Out-Null
 }
 
 Write-Host ""
 Write-Host ("Started " + $SlaveCount + " fake slaves: 127.0.0.1 .. 127.0.0." + $SlaveCount + " port " + $Port)
-Write-Host ("Current = " + $CurrentMa + " mA, Voltage = " + $VoltageV + " V, Furnace = " + $FurnaceC + " C")
+Write-Host ("Current = " + $CurrentMa + " mA, Voltage = " + $VoltageV + " V")
+Write-Host ("Furnace = " + $FurnaceStartC + " C -> " + $FurnaceEndC + " C in " + $FurnaceRampSeconds + " s, then holds")
 Write-Host ""
 Write-Host "Keep this window open. Press Ctrl+C to stop."
 
