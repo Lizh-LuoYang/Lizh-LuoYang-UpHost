@@ -8,7 +8,7 @@ namespace ChipAgingCheck.Domain
     {
         [Category("0.配方信息")]
         [DisplayName("配方名称")]
-        public string Name { get; set; } = "默认配方";
+        public string Name { get; set; } = "配方";
 
         [Category("0.配方信息")]
         [DisplayName("产品型号")]
